@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Universe · SPARK v0.1</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23070B16'/%3E%3Ccircle cx='22' cy='26' r='3' fill='%23FFD60A'/%3E%3Ccircle cx='42' cy='22' r='2.4' fill='%2364D2FF'/%3E%3Ccircle cx='36' cy='42' r='2.8' fill='%23FF2D55'/%3E%3Cpath d='M22 26 L42 22 L36 42 Z' stroke='%232D5BFF' fill='none' stroke-width='1.6'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#070B16; --bg2:#0B1122; --card:rgba(15,23,44,.82); --card2:rgba(20,30,58,.9);
+  --line:rgba(120,150,255,.16); --ink:#EDEFF7; --dim:#9AA3C0; --faint:#5C6685;
+  --blue:#2D5BFF; --coral:#FF2D55; --yellow:#FFD60A; --mint:#00E5A0;
+  --lilac:#C6A8FF; --cyan:#64D2FF; --orange:#FF9F0A;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+  --serif:Georgia,"Times New Roman",serif; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;min-height:100vh}
+#stars{position:fixed;inset:0;z-index:-1;opacity:.9}
+a{color:var(--cyan)}
+h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:.01em;margin:0 0 .4em}
+h2{font-size:1.35rem} h3{font-size:1.05rem}
+p{margin:.35em 0}
+button{font-family:var(--sans);cursor:pointer}
+.hidden{display:none!important}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:10px 18px;background:rgba(7,11,22,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{font-family:var(--serif);font-size:1.25rem;white-space:nowrap}
+.brand .v{font-family:var(--mono);font-size:.7rem;color:var(--faint);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin-left:8px;vertical-align:middle}
+.brand .tag{display:block;font-family:var(--sans);font-size:.68rem;color:var(--faint);letter-spacing:.04em}
+.topbar nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.topbar nav button{background:transparent;border:1px solid transparent;color:var(--dim);border-radius:10px;padding:8px 13px;font-size:.88rem}
+.topbar nav button.active{color:var(--ink);border-color:var(--line);background:var(--card)}
+.topbar nav button:hover{color:var(--ink)}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:10px;padding:8px 12px;font-size:.8rem;white-space:nowrap}
+.ghost:hover{color:var(--ink);border-color:var(--cyan)}
+
+main{max-width:1180px;margin:0 auto;padding:22px 18px 80px}
+.view{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.view{animation:none}}
+
+/* capture */
+.capture-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:20px}
+.capture-card textarea{width:100%;min-height:76px;background:rgba(0,0,0,.35);border:1px solid var(--line);
+  border-radius:12px;color:var(--ink);font-family:var(--sans);font-size:.95rem;padding:12px;resize:vertical}
+.capture-card textarea:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.cap-row{display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--dim);cursor:pointer;user-select:none}
+.toggle input{width:18px;height:18px;accent-color:var(--mint)}
+.btn{background:var(--blue);color:#fff;border:none;border-radius:12px;padding:11px 18px;font-size:.92rem;font-weight:600}
+.btn:hover{filter:brightness(1.12)}
+.btn.small{padding:7px 12px;font-size:.82rem;border-radius:9px}
+.btn.quiet{background:transparent;border:1px solid var(--line);color:var(--dim)}
+.btn.quiet:hover{color:var(--ink)}
+.btn.danger{background:transparent;border:1px solid rgba(255,45,85,.5);color:var(--coral)}
+
+/* now grid */
+.now-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+@media(max-width:860px){.now-grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.card h2{font-size:1.1rem}
+.focus-card{border:1px solid rgba(255,214,10,.4);background:linear-gradient(160deg,rgba(45,91,255,.14),var(--card) 55%)}
+.focus-card .kicker{font-size:.72rem;letter-spacing:.14em;color:var(--yellow);text-transform:uppercase;margin-bottom:6px}
+.focus-card h2{font-size:1.6rem}
+.why{margin:.6em 0;padding-left:1.1em;color:var(--dim);font-size:.9rem}
+.why li{margin:.3em 0}
+.meta{font-size:.78rem;color:var(--faint);font-family:var(--mono)}
+.pill{display:inline-block;font-size:.7rem;border:1px solid var(--line);border-radius:99px;padding:2px 10px;margin:2px 4px 2px 0;color:var(--dim)}
+.pill b{color:var(--ink);font-weight:600}
+.count{font-family:var(--serif);font-size:2rem;color:var(--cyan)}
+.side .card h2{font-size:1rem}
+.shelf{opacity:.62}
+.shelf .item{font-size:.86rem;color:var(--dim);padding:6px 0;border-top:1px dashed var(--line)}
+.warm-item{padding:8px 0;border-top:1px solid var(--line);font-size:.9rem;cursor:pointer}
+.warm-item:hover .t{color:var(--cyan)}
+.warm-item .t{font-weight:600}
+.pulse-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px}
+
+/* board */
+.board-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.board-filter button{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:99px;padding:6px 13px;font-size:.8rem}
+.board-filter button.active{color:var(--ink);border-color:var(--cyan);background:rgba(100,210,255,.08)}
+.board{display:grid;grid-template-columns:repeat(5,minmax(215px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{background:rgba(10,16,34,.6);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:280px}
+.col h3{font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.col h3 .letter{display:inline-flex;width:22px;height:22px;border-radius:7px;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:.72rem;color:#fff}
+.scard{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin-bottom:9px;cursor:pointer}
+.scard:hover{border-color:var(--cyan)}
+.scard .t{font-weight:600;font-size:.88rem;line-height:1.35}
+.scard .dnd{font-size:.68rem;color:var(--mint);font-family:var(--mono);margin-top:4px}
+.scard .cons{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.empty{color:var(--faint);font-size:.82rem;font-style:italic;padding:8px}
+
+/* constellations */
+.const-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px}
+.const-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;position:relative;overflow:hidden}
+.const-card:hover{border-color:var(--cyan)}
+.const-card .bar{position:absolute;top:0;left:0;right:0;height:4px}
+.const-card h2{font-size:1.12rem;margin:.2em 0}
+.const-card .n{font-family:var(--serif);font-size:1.8rem;color:var(--ink)}
+.const-card p{font-size:.85rem;color:var(--dim)}
+.const-card .stars-line{font-size:.75rem;color:var(--faint);font-family:var(--mono)}
+
+/* modal sheet */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(3,6,14,.66);display:flex;justify-content:flex-end}
+.sheet{background:#0C1326;border-left:1px solid var(--line);width:min(560px,100%);height:100%;overflow-y:auto;padding:22px}
+.sheet .close{float:right}
+.tabs{display:flex;gap:4px;margin:14px 0;border-bottom:1px solid var(--line);padding-bottom:0;flex-wrap:wrap}
+.tabs button{background:transparent;border:none;color:var(--dim);padding:9px 12px;font-size:.85rem;border-bottom:2px solid transparent}
+.tabs button.active{color:var(--ink);border-bottom-color:var(--cyan)}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.field input[type=text],.field textarea,.field select{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--line);
+  border-radius:10px;color:var(--ink);font-family:var(--sans);font-size:.9rem;padding:9px 11px}
+.field textarea{min-height:64px;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.statebar{display:flex;gap:6px;align-items:center;margin:10px 0;flex-wrap:wrap}
+.statebar .st{font-family:var(--mono);font-size:.72rem;padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--faint)}
+.statebar .st.cur{color:#fff;border-color:var(--cyan);background:rgba(100,210,255,.12)}
+.slider-row{display:grid;grid-template-columns:130px 1fr 34px;gap:10px;align-items:center;margin-bottom:9px;font-size:.85rem}
+.slider-row input[type=range]{width:100%;accent-color:var(--blue)}
+.slider-row .qv{font-family:var(--mono);color:var(--cyan);text-align:right}
+.slider-row .qq{color:var(--faint);font-size:.74rem;display:block}
+.score{font-family:var(--serif);font-size:1.7rem;color:var(--yellow)}
+.rationale{background:rgba(0,0,0,.3);border:1px dashed var(--line);border-radius:10px;padding:11px;font-size:.87rem;color:var(--dim);margin-top:8px}
+.checkline{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px;font-size:.9rem}
+.checkline input{margin-top:4px;width:17px;height:17px;accent-color:var(--mint)}
+.mono{font-family:var(--mono);font-size:.78rem;color:var(--faint)}
+.lib-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.lib-item .why-arch{font-size:.83rem;color:var(--dim);font-style:italic}
+footer.app{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--faint);font-size:.78rem}
+@media(max-width:640px){.board{grid-template-columns:repeat(5,240px)}.topbar{flex-wrap:wrap}}
+
+/* universe view — the observatory */
+.sky-wrap{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:radial-gradient(1200px 700px at 50% 28%, #0C1430 0%, #070B16 62%)}
+#sky{display:block;width:100%;height:auto;min-height:430px}
+.sky-tools{position:absolute;top:12px;right:12px;display:flex;gap:10px;align-items:center}
+#skyCaption{color:var(--dim);font-size:.74rem;background:rgba(7,11,22,.7);border:1px solid var(--line);border-radius:99px;padding:5px 12px}
+#skyCaption b{color:var(--ink)}
+.sky-legend{position:absolute;left:12px;bottom:12px;background:rgba(7,11,22,.8);border:1px solid var(--line);
+  border-radius:12px;padding:10px 13px;font-size:.74rem;color:var(--dim);backdrop-filter:blur(6px);max-width:255px}
+.sky-legend .li{display:flex;align-items:center;gap:9px;margin:5px 0}
+.sky-legend svg{flex:none}
+.star{cursor:pointer;outline:none}
+.star:focus-visible .core{stroke:#64D2FF;stroke-width:2}
+.star-g{transition:transform 1s ease}
+.const{cursor:pointer;outline:none}
+.const:focus-visible .sky-label{fill:#fff}
+@keyframes twinkle{0%,100%{opacity:var(--o1,.16)}50%{opacity:var(--o2,.05)}}
+.tw{animation:twinkle 5s ease-in-out infinite}
+@keyframes focusPulse{0%,100%{opacity:.5}50%{opacity:1}}
+.fglow{animation:focusPulse 4s ease-in-out infinite}
+.sky-label{font-family:var(--sans);font-size:13px;letter-spacing:.14em;text-transform:uppercase;fill:#9AA3C0;cursor:pointer}
+.sky-label:hover{fill:#fff}
+.band-label{font-family:var(--mono);font-size:10px;fill:#5C6685;letter-spacing:.08em}
+@media (prefers-reduced-motion:reduce){.tw,.fglow{animation:none}.star-g{transition:none}}
+@media(max-width:640px){.sky-legend{display:none}}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="brand">✦ The Universe<span class="v">v0.2 · SPARK</span>
+    <span class="tag">Nothing gets lost. Not everything becomes urgent.</span>
+  </div>
+  <nav role="tablist" aria-label="Universe views">
+    <button data-view="universe" role="tab">✦ Universe</button>
+    <button data-view="now" role="tab">Now</button>
+    <button data-view="board" role="tab">SPARK Board</button>
+    <button data-view="const" role="tab">Constellations</button>
+    <button data-view="library" role="tab">Library</button>
+  </nav>
+  <button class="ghost" id="exportBtn" title="Download your universe as JSON">Export JSON</button>
+</header>
+
+<main>
+  <!-- UNIVERSE -->
+  <section id="view-universe" class="view hidden" role="tabpanel" aria-label="Universe view">
+    <div class="sky-wrap">
+      <svg id="sky" viewBox="0 0 1000 660" role="group" aria-label="Spatial map of your constellations and sparks"></svg>
+      <div class="sky-tools"><span id="skyCaption" class="mono"></span><button class="btn small quiet" id="skyReset">⟲ Whole sky</button></div>
+      <div class="sky-legend" aria-label="How to read the sky">
+        <div class="li"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="#F4F7FF"/></svg> star size = leverage</div>
+        <div class="li"><svg width="18" height="18"><circle cx="9" cy="9" r="6" fill="#F4F7FF" opacity=".35"/></svg> brightness = maturity · dim = parked</div>
+        <div class="li"><svg width="18" height="18"><circle cx="9" cy="9" r="5" fill="none" stroke="#2D5BFF" stroke-width="1.5" stroke-dasharray="2 3"/></svg> ring style = SPARK state</div>
+        <div class="li"><svg width="18" height="18"><circle cx="9" cy="9" r="7" fill="none" stroke="#FFD60A" stroke-width="1.6"/></svg> gold halo = current focus</div>
+        <div class="li"><svg width="18" height="18"><circle cx="9" cy="9" r="3" fill="#F4F7FF"/><circle cx="9" cy="9" r="7" fill="none" stroke="#FFD60A" stroke-width="1"/></svg> ringed dot = finished work</div>
+      </div>
+    </div>
+    <p class="mono" style="margin-top:10px">Planetarium, not dashboard. Click a star to open its SPARK sheet · click a constellation name to zoom in · every star is reachable by Tab.</p>
+  </section>
+
+  <!-- NOW -->
+  <section id="view-now" class="view" role="tabpanel">
+    <div class="capture-card">
+      <h2>Snag it — don't sort it</h2>
+      <textarea id="capText" placeholder="Dump the thought exactly as it arrived. No taxonomy required. You can place and assess it later."></textarea>
+      <div class="cap-row">
+        <label class="toggle"><input type="checkbox" id="capDND" checked> Do not develop now <span class="mono">(default on — capture ≠ obligation)</span></label>
+        <button class="btn" id="capBtn">Capture without activating</button>
+      </div>
+    </div>
+    <div class="now-grid">
+      <div>
+        <div class="card focus-card" id="focusCard"></div>
+        <div class="card" id="warmCard"></div>
+      </div>
+      <div class="side">
+        <div class="card" id="inboxCard"></div>
+        <div class="card" id="pulseCard"></div>
+        <div class="card shelf" id="shelfCard"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOARD -->
+  <section id="view-board" class="view hidden" role="tabpanel">
+    <div class="board-filter" id="boardFilter"></div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <!-- CONSTELLATIONS -->
+  <section id="view-const" class="view hidden" role="tabpanel">
+    <div class="const-grid" id="constGrid"></div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="view-library" class="view hidden" role="tabpanel">
+    <div id="libraryList"></div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<footer class="app">
+  The Universe v0.2 — single-file build. Your data lives in this browser's localStorage only; nothing leaves your machine.
+  Reduction engine (AI clustering / dedupe) arrives in 0.2. Export JSON any time to back up.
+</footer>
+
+<script>
+"use strict";
+
+/* ================= data ================= */
+const STATES = ["snag","place","assess","refine","kickoff"];
+const STATE_META = {
+  snag:   {name:"Snag",    letter:"S", color:"#64D2FF", hint:"Capture the raw thought exactly as it arrived."},
+  place:  {name:"Place",   letter:"P", color:"#2D5BFF", hint:"Attach the spark to one or more constellations."},
+  assess: {name:"Assess",  letter:"A", color:"#FFD60A", hint:"Decide: now, later, someday, or never. The safety gate."},
+  refine: {name:"Refine",  letter:"R", color:"#FF9F0A", hint:"Turn the spark into an editorial object: thesis, hook, format."},
+  kickoff:{name:"Kickoff", letter:"K", color:"#00E5A0", hint:"Commit to production. Next action + definition of done."}
+};
+const ENTRY_POINTS = ["Idea/thesis","Title","Hook","Visual/image","Story/anecdote","Question","Quote",
+  "Research finding","Emotion/tension","Format","Audience need","Audio/rhythm","Problem to solve"];
+const CRITERIA = [
+  ["maturity","Maturity","How formed is the idea already?"],
+  ["meaning","Meaning","How strongly does it connect to your core body of work?"],
+  ["timeliness","Timeliness","Is there a real external window or deadline?"],
+  ["leverage","Leverage","Can one artifact unlock multiple outputs or decisions?"],
+  ["finishability","Finishability","Can it be done with current time, energy, assets?"],
+  ["energyFit","Energy fit","Does the cognitive mode match current capacity?"],
+  ["evidenceReadiness","Evidence readiness","Are supporting sources/assets already available?"],
+  ["obligation","Obligation","Real commitment — vs self-created urgency?"]
+];
+const WEIGHTS = {meaning:.20, maturity:.15, timeliness:.15, leverage:.15, finishability:.15, energyFit:.10, evidenceReadiness:.05, obligation:.05};
+const DISPOSITIONS = ["Focus now","Keep warm","Someday","Never"];
+
+function seedData(){
+  return {
+    v: 1,
+    constellations: [
+      {id:"idleness", name:"The Idleness Institute / Unhurried Ambition", color:"#00E5A0",
+       desc:"Anti-hustle philosophy for burned-out ambitious people. Bertie's Brain, Russell's Renaissance, Anti-Hustle Reset, Course 002. Audio expression of existing IP — never a new brand."},
+      {id:"agency", name:"AI + Human Agency", color:"#2D5BFF",
+       desc:"Agent-Ready Research Checklist, research debt, stakeholder amnesia. AI as tooling for human judgment, not replacement."},
+      {id:"disability", name:"Disability + Accessibility", color:"#C6A8FF",
+       desc:"EDS lived experience, medical advocacy, accessibility-by-default design. Lived expertise as research method."},
+      {id:"selah", name:"Selah / Pain + Resilience", color:"#FF2D55",
+       desc:"The Hypochondria writing project and the story underneath it. Titles-only for sacred material."},
+      {id:"identity", name:"Identity + Narrative", color:"#FFD60A",
+       desc:"Memoir fragments, professional narrative, how the story gets told and who it serves."},
+      {id:"money", name:"Work + Money + Precarity", color:"#FF9F0A",
+       desc:"The relationship to money constructed vs inherited. Survival economics, freelance reality."},
+      {id:"building", name:"Building in Public / Creative Technology", color:"#64D2FF",
+       desc:"Becoming Beta, Workshop Wall, newsletter, site builds. The workshop is the evidence wall."},
+      {id:"systems", name:"Creativity + Systems", color:"#9AA3C0",
+       desc:"Hook Point formats, content systems, dispatch infrastructure. The machine that makes the making possible — including this Universe."}
+    ],
+    sparks: [
+      {id:"sp-russell-ep1", title:"Russell audio series — Episode 1 concept + script",
+       content:"Anti-hustle / philosophy-for-burned-out-ambitious-people audio series anchored in Russell's 'In Praise of Idleness'. 1–3 min spoken essays, one idea each. Title undecided: 'The Idleness Institute' vs 'Unhurried Ambition'. Sign-off: 'Go do less. Make it count.' NEVER invent Russell quotes.",
+       entryPoint:"Audio/rhythm", constellations:["idleness"], state:"refine", doNotDevelop:false,
+       createdAt:"2026-09-29", nextAction:"Draft Episode 1 concept + script for Chanelle's approval (approval gate before any recording).",
+       notes:"Assets on disk: In Praise of Idleness summary, Quotes by Bertrand Russell, The New Idleness, series brief at workspace/podcasts/russell-series/series-brief.md. dscout diary-study week calls for ~1 Spotify episode/day.",
+       assess:{maturity:7,meaning:10,timeliness:9,leverage:9,finishability:8,energyFit:7,evidenceReadiness:9,obligation:4,
+         rationale:"Highest meaning in the archive (core IP: Idleness Institute). Real external window via dscout diary-study week. One finished episode unlocks the series format, Course 002 audio, and the newsletter voice. Next action is a draft, not a recording — finishable in one session.",
+         disposition:"Focus now"},
+       brief:{idea:"Idleness is not laziness — it is the precondition for a life worth living. Russell's 1932 essay, read for people burning out in 2026.",
+         tension:"Ambition says rest is theft; Russell says the theft runs the other way.",
+         audienceBefore:"Exhausted, performing productivity, quietly suspecting the hustle is a scam.",
+         audienceAfter:"Permission to rest as strategy — and one Russell idea they can actually use.",
+         oneSentence:"You are not behind; the race was rigged.",
+         format:"1–3 min spoken audio essay, Kokoro af_heart voice",
+         evidence:"In Praise of Idleness summary + quotes file; The New Idleness; Russell's Renaissance notes.",
+         creativeDirection:"Unhurried, dry-warm, essayistic. Short sentences. Silence between ideas.",
+         packaging:"Working title TBD (The Idleness Institute vs Unhurried Ambition). Cover: minimal, off-white, serif.",
+         cta:"Subscribe for one idea a day during the diary-study week. Discuss: what would you do with an idle hour?"},
+       project:{nextAction:"Kai drafts Episode 1 concept + script → Chanelle approves → synthesize audio",
+         definitionOfDone:"Episode 1 concept + script approved by Chanelle; audio synthesized and saved to Spotify show."}},
+      {id:"sp-daily2", title:"Daily Briefings — episode 2",
+       content:"Her Save-to-Spotify show 'Daily Briefings' (0pJM92PMpMCWcpRQE4YyXu). Episode 1 was approved as a one-off; not daily yet. dscout diary-study week is the forcing function for a short daily run.",
+       entryPoint:"Format", constellations:["building"], state:"snag", doNotDevelop:false, createdAt:"2026-09-29",
+       assess:{}, brief:{}, project:{}},
+      {id:"sp-substack", title:"Substack Workshop Notes — first post",
+       content:"Newsletter moved from Buttondown to Substack (account under get@chanellehenry.com, magic-link sign-in). Weekly Tuesdays, ~300 words. First post still unwritten.",
+       entryPoint:"Format", constellations:["building"], state:"snag", doNotDevelop:true, createdAt:"2026-09-29",
+       notes:"Verify magic-link sign-in completed before drafting.",
+       assess:{}, brief:{}, project:{}},
+      {id:"sp-hookpoint", title:"Hook Point — pick 1–3 winning formats",
+       content:"100 ranked content formats (Phase 1, Brendan Kane method) sitting in Drive sheet + workspace markdown. Decision pending: which 1–3 to actually shoot first.",
+       entryPoint:"Format", constellations:["systems"], state:"assess", doNotDevelop:false, createdAt:"2026-09-29",
+       assess:{maturity:8,meaning:7,timeliness:4,leverage:8,finishability:6,energyFit:5,evidenceReadiness:9,obligation:2,
+         rationale:"Fully formed inventory, high reuse — one format choice unlocks 20+ episodes. But no external window, and production energy is currently claimed by the audio week. Keep warm until audio run stabilizes.",
+         disposition:"Keep warm"},
+       brief:{}, project:{}},
+      {id:"sp-cases28", title:"Case-study pages 2–8 (site 2.0)",
+       content:"Beam Lab Notebook 01 shipped Sep 28 as the template. Seven more case studies remain. RULE: she tells Kai where the content files live — never write pages from invented content.",
+       entryPoint:"Problem to solve", constellations:["building"], state:"snag", doNotDevelop:true, createdAt:"2026-09-29",
+       assess:{}, brief:{}, project:{}},
+      {id:"sp-money", title:"Money essay — the relationship I constructed",
+       content:"I deliberately constructed a different relationship to money than the one I inherited. I rejected scarcity obsession because I saw what it did to people around me, but that may also have made financial systems aversive enough to become destabilizing.",
+       entryPoint:"Emotion/tension", constellations:["money","identity"], state:"snag", doNotDevelop:true, createdAt:"2026-09-29",
+       notes:"Possible future formats: essay, 2-min audio, memoir fragment, talk segment. Keep warm — do not activate today.",
+       assess:{}, brief:{}, project:{}},
+      {id:"sp-curator", title:"Curator About page — swap hello@ → get@",
+       content:"Site audit found hello@chanellehenry.com (unmonitored) on the About page — inquiries go nowhere. Fix offered, not yet approved. Needs her word before touching the site.",
+       entryPoint:"Problem to solve", constellations:["identity"], state:"place", doNotDevelop:false, createdAt:"2026-09-29",
+       assess:{}, brief:{}, project:{}},
+      {id:"sp-hypo", title:"Hypochondria — the writing project",
+       content:"Long-form writing project on the medical-dismissal years. Story, not a medical list. Sacred material — titles-only discipline applies.",
+       entryPoint:"Story/anecdote", constellations:["selah","disability"], state:"assess", doNotDevelop:true, createdAt:"2026-09-29",
+       assess:{maturity:4,meaning:10,timeliness:3,leverage:9,finishability:3,energyFit:4,evidenceReadiness:7,obligation:1,
+         rationale:"Maximum meaning, minimum finishability right now — heavy material, low-energy season. High reuse across memoir/IP, but activating it now would borrow energy from the audio run. Shelve with love.",
+         disposition:"Someday"},
+       brief:{}, project:{}}
+    ],
+    library: [
+      {id:"lib-28grams", title:"28grams.store — Transmission Paused hiatus page", type:"Published site",
+       publishedAt:"2026-09-29", url:"28grams.store",
+       whyArchived:"Deployed live ~01:50 EDT Sep 29 after Gabe stopped selling. Chanelle's name on it as page designer only; inquiries route to Gabe. Finished work — compounds as evidence of the wind-down pattern.",
+       reusable:"Hiatus-page pattern for sunsetting projects without burning the domain."},
+      {id:"lib-beam", title:"Beam Lab Notebook 01 — first case-study page", type:"Published page",
+       publishedAt:"2026-09-28", url:"workspace/site-deploy/stage4/beam/",
+       whyArchived:"Shipped as the template for site 2.0 case studies. All six exhibits from real Drive artifacts; copy from verified research only, no invented metrics.",
+       reusable:"Case-study template + tone sheet for pages 2–8."}
+    ],
+    links: [],
+    now: {
+      focusId:"sp-russell-ep1",
+      focusWhy:[
+        "Real external window: dscout diary-study week calls for ~1 Spotify episode/day.",
+        "Evidence ready: In Praise of Idleness summary, Russell quotes, The New Idleness — all already on disk.",
+        "Finishable in one session: the defined next action is a draft concept + script for approval, not a recording.",
+        "High leverage: one episode anchors the Idleness Institute, Course 002 audio, and the newsletter voice at once."
+      ],
+      warm:["sp-hookpoint","sp-daily2","sp-substack"],
+      pulse:[
+        {constId:"idleness", note:"Russell series + diary-study week — audio production is the weather this week."},
+        {constId:"building", note:"Newsletter first post + 7 case-study pages parked, waiting on her files."}
+      ]
+    }
+  };
+}
+
+/* ================= store ================= */
+const KEY = "universe-v1";
+let DB;
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ DB = JSON.parse(raw); }
+  }catch(e){}
+  if(!DB || DB.v !== 1){ DB = seedData(); }
+  if(!Array.isArray(DB.links)) DB.links = [];
+  if(!DB.now) DB.now = seedData().now;
+  save();
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){} }
+function uid(){ return "sp-" + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function constById(id){ return DB.constellations.find(c=>c.id===id); }
+function sparkById(id){ return DB.sparks.find(s=>s.id===id); }
+function liveSparks(){ return DB.sparks; }
+function fmtDate(d){ if(!d) return ""; const t=new Date(d+"T12:00:00"); return isNaN(t)?d:t.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
+function sparkScore(a){ const s=a||{}; let t=0; for(const k in WEIGHTS){ t += (Number(s[k])||0)*WEIGHTS[k]; } return Math.round(t*10); }
+
+/* ================= starfield ================= */
+(function(){
+  const c = document.getElementById("stars"), x = c.getContext("2d");
+  let W,H,stars=[];
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function size(){ W=c.width=innerWidth; H=c.height=innerHeight;
+    stars = Array.from({length: Math.min(220, W*H/9000)}, ()=>({
+      x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.4+.3,
+      p:Math.random()*Math.PI*2, s:.2+Math.random()*.8 }));
+  }
+  size(); addEventListener("resize", size);
+  (function draw(t){
+    x.clearRect(0,0,W,H);
+    for(const s of stars){
+      const tw = reduced ? .7 : .35 + .35*Math.sin(t/900*s.s + s.p);
+      x.globalAlpha = Math.max(.08, tw);
+      x.fillStyle = "#cdd8ff";
+      x.beginPath(); x.arc(s.x, s.y, s.r, 0, 7); x.fill();
+    }
+    x.globalAlpha = 1;
+    if(!reduced) requestAnimationFrame(draw);
+  })(0);
+})();
+
+/* ================= navigation ================= */
+let boardConstFilter = null;
+document.querySelectorAll(".topbar nav button").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    document.querySelectorAll(".topbar nav button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll(".view").forEach(v=>v.classList.add("hidden"));
+    document.getElementById("view-"+b.dataset.view).classList.remove("hidden");
+    if(b.dataset.view==="board") renderBoard();
+    if(b.dataset.view==="const") renderConst();
+    if(b.dataset.view==="library") renderLibrary();
+    if(b.dataset.view==="universe") renderUniverse();
+    if(b.dataset.view==="now") renderNow();
+    window.scrollTo(0,0);
+  });
+});
+function go(view, constId){
+  if(constId!==undefined){ boardConstFilter = constId; }
+  document.querySelector('.topbar nav button[data-view="'+view+'"]').click();
+}
+
+/* ================= capture ================= */
+document.getElementById("capBtn").addEventListener("click", ()=>{
+  const t = document.getElementById("capText").value.trim();
+  if(!t){ document.getElementById("capText").focus(); return; }
+  const lines = t.split("\n");
+  DB.sparks.unshift({
+    id: uid(), title: lines[0].slice(0,90) || "Untitled spark",
+    content: t, entryPoint:"", constellations:[], state:"snag",
+    doNotDevelop: document.getElementById("capDND").checked,
+    createdAt: new Date().toISOString().slice(0,10),
+    assess:{}, brief:{}, project:{}
+  });
+  document.getElementById("capText").value = "";
+  save(); renderNow();
+});
+
+/* ================= NOW view ================= */
+function dotsFor(ids){ return (ids||[]).map(id=>{const c=constById(id); return c?'<span class="dot" title="'+esc(c.name)+'" style="background:'+c.color+'"></span>':"";}).join(""); }
+
+function renderNow(){
+  const focus = sparkById(DB.now.focusId);
+  const fc = document.getElementById("focusCard");
+  if(focus){
+    fc.innerHTML =
+      '<div class="kicker">What deserves your attention now</div>'+
+      '<h2>'+esc(focus.title)+'</h2>'+
+      '<div>'+dotsFor(focus.constellations)+' <span class="meta">'+esc(STATE_META[focus.state].name)+' · captured '+esc(fmtDate(focus.createdAt))+'</span></div>'+
+      '<ul class="why">'+DB.now.focusWhy.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul>'+
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn small" onclick="openSpark(\''+focus.id+'\')">Open the spark</button>'+
+      '<button class="btn small quiet" onclick="openSparkTab(\''+focus.id+'\',\'kickoff\')">See next action</button></div>';
+  } else {
+    fc.innerHTML = '<div class="kicker">What deserves your attention now</div><h2>Nothing set.</h2><p>Assess a spark and mark it “Focus now”.</p>';
+  }
+
+  const inbox = liveSparks().filter(s=>s.state==="snag");
+  document.getElementById("inboxCard").innerHTML =
+    '<h2>Inbox needs tending</h2><div class="count">'+inbox.length+'</div>'+
+    '<p class="meta">unprocessed snag'+(inbox.length===1?"":"s")+' — capture first, sort later</p>'+
+    (inbox.length? '<div style="margin-top:8px">'+inbox.slice(0,4).map(s=>'<div class="warm-item" onclick="openSpark(\''+s.id+'\')"><span class="t">'+esc(s.title)+'</span></div>').join("")+'</div>'
+      + (inbox.length>4?'<button class="btn small quiet" onclick="go(\'board\')">See all on the board</button>':"")
+     : '<p style="color:var(--mint)">Inbox zero. Suspiciously calm. Enjoy it.</p>');
+
+  const warm = DB.now.warm.map(sparkById).filter(Boolean);
+  document.getElementById("warmCard").innerHTML =
+    '<h2>Keep warm <span class="mono">(max 3)</span></h2>'+
+    (warm.length? warm.map(s=>'<div class="warm-item" onclick="openSpark(\''+s.id+'\')"><span class="t">'+esc(s.title)+'</span><br><span class="meta">'+esc(STATE_META[s.state].name)+(s.assess&&s.assess.disposition?" · "+esc(s.assess.disposition):"")+'</span></div>').join("")
+     : '<p class="meta">Nothing warming. The shelf is quiet too.</p>');
+
+  document.getElementById("pulseCard").innerHTML =
+    '<h2>Constellation pulse</h2>'+
+    DB.now.pulse.map(p=>{const c=constById(p.constId); return c?
+      '<p><span class="pulse-dot" style="background:'+c.color+'"></span><b>'+esc(c.name)+'</b><br><span class="meta">'+esc(p.note)+'</span></p>':"";}).join("");
+
+  const shelf = liveSparks().filter(s=>s.doNotDevelop && s.state!=="kickoff");
+  document.getElementById("shelfCard").innerHTML =
+    '<h2>Quiet shelf <span class="mono">('+shelf.length+')</span></h2>'+
+    '<p class="meta">Parked on purpose. Safe, not urgent.</p>'+
+    shelf.slice(0,6).map(s=>'<div class="item">'+esc(s.title)+'</div>').join("")+
+    (shelf.length>6?'<p class="meta">+'+(shelf.length-6)+' more</p>':"");
+}
+
+/* ================= BOARD view ================= */
+function renderBoard(){
+  const f = document.getElementById("boardFilter");
+  const all = [{id:null,name:"All"}].concat(DB.constellations.map(c=>({id:c.id,name:c.name.split(" /")[0],color:c.color})));
+  f.innerHTML = all.map(c=>'<button class="'+(boardConstFilter===c.id?"active":"")+'" onclick="setBoardFilter('+(c.id?'\''+c.id+'\'':'null')+')">'+(c.color?'<span class="dot" style="background:'+c.color+'"></span> ':"")+esc(c.name)+'</button>').join("");
+
+  const b = document.getElementById("board");
+  b.innerHTML = STATES.map(st=>{
+    const cards = liveSparks().filter(s=>s.state===st && (!boardConstFilter || (s.constellations||[]).includes(boardConstFilter)));
+    return '<div class="col"><h3><span class="letter" style="background:'+STATE_META[st].color+'22;color:'+STATE_META[st].color+';border:1px solid '+STATE_META[st].color+'55">'+STATE_META[st].letter+'</span>'+STATE_META[st].name+
+      ' <span class="mono">'+cards.length+'</span></h3>'+
+      (cards.length? cards.map(s=>'<div class="scard" onclick="openSpark(\''+s.id+'\')"><div class="t">'+esc(s.title)+'</div>'+
+        (s.doNotDevelop?'<div class="dnd">◌ do not develop now</div>':"")+
+        '<div class="cons">'+dotsFor(s.constellations)+'</div></div>').join("")
+       : '<div class="empty">Nothing here. Spacious.</div>')+'</div>';
+  }).join("");
+}
+function setBoardFilter(id){ boardConstFilter = id; renderBoard(); }
+
+/* ================= CONSTELLATIONS view ================= */
+function renderConst(){
+  document.getElementById("constGrid").innerHTML = DB.constellations.map(c=>{
+    const n = liveSparks().filter(s=>(s.constellations||[]).includes(c.id)).length;
+    const names = liveSparks().filter(s=>(s.constellations||[]).includes(c.id)).slice(0,3).map(s=>esc(s.title)).join(" · ");
+    return '<div class="const-card" onclick="go(\'board\',\''+c.id+'\')"><div class="bar" style="background:'+c.color+'"></div>'+
+      '<div class="n">'+n+'</div><h2>'+esc(c.name)+'</h2><p>'+esc(c.desc)+'</p>'+
+      (names?'<div class="stars-line">'+names+'</div>':"")+'</div>';
+  }).join("");
+}
+
+/* ================= LIBRARY view ================= */
+function renderLibrary(){
+  const el = document.getElementById("libraryList");
+  el.innerHTML = '<h2 style="margin-bottom:14px">Library <span class="mono">— institutional memory, not another queue</span></h2>'+
+    (DB.library.length? DB.library.map(l=>'<div class="lib-item"><div class="mono">'+esc(l.type||"Archived")+' · '+esc(fmtDate(l.publishedAt||l.archivedAt))+'</div>'+
+      '<h3 style="margin:.3em 0">'+esc(l.title)+'</h3>'+
+      (l.url?'<p class="meta">'+esc(l.url)+'</p>':"")+
+      '<p class="why-arch">'+esc(l.whyArchived||"")+'</p>'+
+      (l.reusable?'<p style="font-size:.85rem"><b style="color:var(--mint)">Reusable:</b> '+esc(l.reusable)+'</p>':"")+
+      '</div>').join("")
+     : '<p class="meta">Nothing archived yet. Finished work lands here and compounds.</p>');
+}
+
+/* ================= export ================= */
+document.getElementById("exportBtn").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "universe-backup-"+new Date().toISOString().slice(0,10)+".json";
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+});
+
+/* ================= spark detail ================= */
+let curSpark = null, curTab = "spark";
+
+function openSpark(id){ curSpark = id; curTab = "spark"; drawSheet(); document.getElementById("modal").classList.remove("hidden"); }
+function openSparkTab(id, tab){ curSpark = id; curTab = tab; drawSheet(); document.getElementById("modal").classList.remove("hidden"); }
+function closeModal(){ document.getElementById("modal").classList.add("hidden"); curSpark = null; refresh(); }
+document.getElementById("modal").addEventListener("click", e=>{ if(e.target.id==="modal") closeModal(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && curSpark) closeModal(); });
+
+function refresh(){
+  const active = document.querySelector(".topbar nav button.active").dataset.view;
+  if(active==="universe") renderUniverse();
+  if(active==="now") renderNow();
+  if(active==="board") renderBoard();
+  if(active==="const") renderConst();
+  if(active==="library") renderLibrary();
+}
+
+function stateBar(s){
+  const i = STATES.indexOf(s.state);
+  return '<div class="statebar">'+STATES.map((st,j)=>{
+    return '<span class="st'+(j===i?" cur":"")+'" title="'+esc(STATE_META[st].hint)+'">'+STATE_META[st].letter+' · '+STATE_META[st].name+'</span>';
+  }).join("")+
+  '<span style="flex:1"></span>'+
+  (i>0?'<button class="btn small quiet" onclick="moveSpark(-1)">← Back</button>':"")+
+  (i<STATES.length-1?'<button class="btn small" onclick="moveSpark(1)">Advance →</button>':"")+
+  '</div>';
+}
+function moveSpark(dir){
+  const s = sparkById(curSpark); if(!s) return;
+  const i = STATES.indexOf(s.state);
+  const ni = Math.max(0, Math.min(STATES.length-1, i+dir));
+  s.state = STATES[ni]; save(); drawSheet(); refresh();
+}
+
+function drawSheet(){
+  const s = sparkById(curSpark); if(!s){ closeModal(); return; }
+  const sh = document.getElementById("sheet");
+  sh.innerHTML =
+    '<button class="btn quiet small close" onclick="closeModal()">✕ Close</button>'+
+    stateBar(s)+
+    '<h2 style="margin-top:6px">'+esc(s.title)+'</h2>'+
+    '<div class="meta">captured '+esc(fmtDate(s.createdAt))+(s.entryPoint?" · "+esc(s.entryPoint):"")+(s.doNotDevelop?' · <span style="color:var(--mint)">◌ do not develop now</span>':"")+'</div>'+
+    '<div class="tabs">'+
+      [["spark","✦ Spark"],["place","◈ Place"],["assess","◎ Assess"],["refine","✎ Refine"],["kickoff","➤ Kickoff"]]
+      .map(t=>'<button class="'+(curTab===t[0]?"active":"")+'" onclick="setTab(\''+t[0]+'\')">'+t[1]+'</button>').join("")+
+    '</div>'+
+    '<div id="tabBody">'+tabBody(s)+'</div>'+
+    '<div style="margin-top:22px;display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn small quiet" onclick="archiveSpark()">Archive…</button>'+
+      '<button class="btn small danger" onclick="deleteSpark()">Delete</button>'+
+    '</div>';
+}
+function setTab(t){ curTab = t; drawSheet(); }
+
+function tabBody(s){
+  if(curTab==="spark") return tabSpark(s);
+  if(curTab==="place") return tabPlace(s);
+  if(curTab==="assess") return tabAssess(s);
+  if(curTab==="refine") return tabRefine(s);
+  if(curTab==="kickoff") return tabKickoff(s);
+  return "";
+}
+
+function tabSpark(s){
+  return '<div class="field"><label>Title</label><input type="text" value="'+esc(s.title)+'" onchange="updField(\'title\',this.value)"></div>'+
+  '<div class="field"><label>The raw capture — exactly as it arrived</label><textarea style="min-height:120px" onchange="updField(\'content\',this.value)">'+esc(s.content)+'</textarea></div>'+
+  '<div class="field"><label>Entry point <span class="mono">(how the idea arrived)</span></label><select onchange="updField(\'entryPoint\',this.value)">'+
+    '<option value="">— not declared —</option>'+
+    ENTRY_POINTS.map(e=>'<option '+(s.entryPoint===e?"selected":"")+'>'+esc(e)+'</option>').join("")+'</select></div>'+
+  '<div class="field"><label>Notes / context</label><textarea onchange="updField(\'notes\',this.value)">'+esc(s.notes||"")+'</textarea></div>'+
+  '<label class="toggle"><input type="checkbox" '+(s.doNotDevelop?"checked":"")+' onchange="updField(\'doNotDevelop\',this.checked)"> Do not develop now — captured, not obligated</label>'+
+  '<p class="rationale" style="margin-top:14px">'+esc(STATE_META[s.state].hint)+'</p>';
+}
+function updField(k,v){ const s=sparkById(curSpark); if(!s) return; s[k]=v; save(); if(k==="title"||k==="doNotDevelop") drawSheet(); refresh(); }
+
+function tabPlace(s){
+  return '<p style="color:var(--dim);font-size:.9rem">Attach this spark to one or more constellations. AI may suggest; you can ignore. <span class="mono">Suggested links need your confirmation before they count.</span></p>'+
+  DB.constellations.map(c=>{
+    const on = (s.constellations||[]).includes(c.id);
+    return '<label class="checkline"><input type="checkbox" '+(on?"checked":"")+' onchange="toggleConst(\''+c.id+'\',this.checked)">'+
+      '<span><span class="dot" style="background:'+c.color+'"></span> <b>'+esc(c.name)+'</b><br><span class="meta">'+esc(c.desc)+'</span></span></label>';
+  }).join("")+
+  '<div class="field" style="margin-top:16px"><label>Linked sparks <span class="mono">confirmed lines in the Universe view</span></label>'+
+  (liveSparks().filter(function(o){ return o.id!==s.id; }).map(function(o){
+    const on = (DB.links||[]).some(function(l){ return (l.a===s.id&&l.b===o.id)||(l.a===o.id&&l.b===s.id); });
+    return '<label class="checkline"><input type="checkbox" '+(on?"checked":"")+' onchange="toggleLink(\''+o.id+'\',this.checked)"><span>'+esc(o.title)+'</span></label>';
+  }).join("") || '<p class="meta">No other sparks yet.</p>')+'</div>';
+}
+function toggleConst(cid,on){
+  const s = sparkById(curSpark); if(!s) return;
+  const before = starPos(s);
+  s.constellations = s.constellations||[];
+  if(on && !s.constellations.includes(cid)) s.constellations.push(cid);
+  if(!on) s.constellations = s.constellations.filter(x=>x!==cid);
+  const after = starPos(s);
+  save();
+  if(!reducedMotion() && (Math.abs(before.x-after.x)>1 || Math.abs(before.y-after.y)>1)){
+    travelAnim = {id:s.id, from:before, to:after};
+  }
+  refresh();
+}
+
+function tabAssess(s){
+  s.assess = s.assess || {};
+  const score = sparkScore(s.assess);
+  return '<p style="color:var(--dim);font-size:.9rem">The safety gate. Score is a weighted heuristic (meaning counts most; obligation counts least — urgency doesn\'t get to cheat). <b>It is allowed to say “not now.”</b></p>'+
+  '<div style="margin:12px 0"><span class="score" id="scoreOut">'+score+'</span> <span class="meta">/ 100 weighted focus score</span></div>'+
+  CRITERIA.map(c=>{
+    const v = s.assess[c[0]]==null?5:s.assess[c[0]];
+    return '<div class="slider-row"><span>'+c[1]+'<span class="qq">'+c[2]+'</span></span>'+
+      '<input type="range" min="0" max="10" value="'+v+'" oninput="updCrit(\''+c[0]+'\',this.value,this)">'+
+      '<span class="qv">'+v+'</span></div>';
+  }).join("")+
+  '<div class="field" style="margin-top:14px"><label>Disposition</label><select onchange="updDisp(this.value)">'+
+    DISPOSITIONS.map(d=>'<option '+(s.assess.disposition===d?"selected":"")+'>'+d+'</option>').join("")+'</select></div>'+
+  '<div class="field"><label>Rationale <span class="mono">(the engine must show its work)</span></label><textarea style="min-height:80px" onchange="updAssessText(this.value)" placeholder="Why this disposition? What would change it?">'+esc(s.assess.rationale||"")+'</textarea></div>'+
+  '<p class="mono">Weights: meaning .20 · maturity .15 · timeliness .15 · leverage .15 · finishability .15 · energy .10 · evidence .05 · obligation .05</p>';
+}
+function updCrit(k,v,el){
+  const s = sparkById(curSpark); if(!s) return;
+  s.assess = s.assess||{}; s.assess[k]=Number(v);
+  el.parentElement.querySelector(".qv").textContent = v;
+  const so = document.getElementById("scoreOut"); if(so) so.textContent = sparkScore(s.assess);
+  save();
+}
+function updAssessText(v){ const s=sparkById(curSpark); if(!s) return; s.assess=s.assess||{}; s.assess.rationale=v; save(); syncNowLists(); save(); }
+function updDisp(d){
+  const s = sparkById(curSpark); if(!s) return;
+  s.assess = s.assess||{};
+  if(d==="Focus now"){
+    liveSparks().forEach(o=>{ if(o.id!==s.id && o.assess && o.assess.disposition==="Focus now"){ o.assess.disposition="Keep warm"; } });
+  }
+  s.assess.disposition = d;
+  syncNowLists(); save(); drawSheet(); refresh();
+}
+function syncNowLists(){
+  const f = liveSparks().find(x=>x.assess && x.assess.disposition==="Focus now");
+  if(f){
+    DB.now.focusId = f.id;
+    DB.now.focusWhy = f.assess.rationale ? [f.assess.rationale] : ["No rationale recorded yet — open the Assess tab and write one."];
+  }
+  DB.now.warm = liveSparks().filter(x=>x.assess && x.assess.disposition==="Keep warm").slice(0,3).map(x=>x.id);
+}
+
+const BRIEF_FIELDS = [
+  ["idea","The idea","What am I actually saying?"],
+  ["tension","The tension","What contradiction or problem makes it interesting?"],
+  ["audienceBefore","Audience before","How do they feel / think before?"],
+  ["audienceAfter","Audience after","How should they feel / think after?"],
+  ["oneSentence","One sentence","What should they remember tomorrow?"],
+  ["format","Format","Essay, 90-sec audio, video, carousel, podcast, thread, talk…"],
+  ["evidence","Evidence","Stories, research, quotes, examples, artifacts."],
+  ["creativeDirection","Creative direction","Mood, pacing, visual metaphor, sound, references."],
+  ["packaging","Packaging","Working title, hook, thumbnail / cover concept."],
+  ["cta","CTA","What should the audience think, feel, do, or discuss?"]
+];
+function tabRefine(s){
+  s.brief = s.brief||{};
+  const filled = BRIEF_FIELDS.filter(f=>s.brief[f[0]]&&s.brief[f[0]].trim()).length;
+  return '<p style="color:var(--dim);font-size:.9rem">Turn the spark into an editorial object. Fill only from known material — <b>mark gaps explicitly</b> instead of inventing. <span class="mono">'+filled+'/10 fields</span></p>'+
+  BRIEF_FIELDS.map(f=>'<div class="field"><label>'+f[1]+' <span class="mono">'+esc(f[2])+'</span></label>'+
+    '<textarea onchange="updBrief(\''+f[0]+'\',this.value)">'+esc(s.brief[f[0]]||"")+'</textarea></div>').join("");
+}
+function updBrief(k,v){ const s=sparkById(curSpark); if(!s) return; s.brief=s.brief||{}; s.brief[k]=v; save(); }
+
+function tabKickoff(s){
+  s.project = s.project||{};
+  return '<p style="color:var(--dim);font-size:.9rem">Commit to production. The brief freezes unless you intentionally revise it.</p>'+
+  '<div class="field"><label>Next action <span class="mono">(one, concrete)</span></label><textarea onchange="updProj(\'nextAction\',this.value)">'+esc(s.project.nextAction||"")+'</textarea></div>'+
+  '<div class="field"><label>Definition of done</label><textarea onchange="updProj(\'definitionOfDone\',this.value)" placeholder="What does finished look like? How will you know?">'+esc(s.project.definitionOfDone||"")+'</textarea></div>'+
+  (s.project.nextAction?'<div class="rationale"><b style="color:var(--mint)">Next:</b> '+esc(s.project.nextAction)+'</div>':"")+
+  '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" onclick="publishSpark()">Mark published → Library</button></div>'+
+  '<p class="mono" style="margin-top:10px">Published work leaves SPARK and enters the Library — with reusable fragments noted, so finished work compounds.</p>';
+}
+function updProj(k,v){ const s=sparkById(curSpark); if(!s) return; s.project=s.project||{}; s.project[k]=v; save(); }
+function publishSpark(){
+  const s = sparkById(curSpark); if(!s) return;
+  const url = prompt("Published URL or file reference (optional):", s.project.url||"") ;
+  const reuse = prompt("Reusable fragments for future work (optional):", "") || "";
+  DB.library.unshift({id:"lib-"+Date.now().toString(36), title:s.title, type:"Published",
+    publishedAt:new Date().toISOString().slice(0,10), url:url||"",
+    whyArchived:"Shipped from Kickoff. "+(s.brief&&s.brief.oneSentence?("One-liner: "+s.brief.oneSentence):""),
+    reusable:reuse});
+  DB.sparks = DB.sparks.filter(x=>x.id!==s.id);
+  save(); closeModal();
+}
+function archiveSpark(){
+  const s = sparkById(curSpark); if(!s) return;
+  const reason = prompt("Archive reason (retired? merged? never?):", "");
+  if(reason===null) return;
+  DB.library.unshift({id:"lib-"+Date.now().toString(36), title:s.title, type:"Archived spark ("+STATE_META[s.state].name+")",
+    archivedAt:new Date().toISOString().slice(0,10), whyArchived:reason||"Archived without a recorded reason.",
+    reusable:""});
+  DB.sparks = DB.sparks.filter(x=>x.id!==s.id);
+  save(); closeModal();
+}
+function deleteSpark(){
+  const s = sparkById(curSpark); if(!s) return;
+  if(!confirm("Delete this spark permanently? This can't be undone.")) return;
+  DB.sparks = DB.sparks.filter(x=>x.id!==s.id);
+  save(); closeModal();
+}
+
+/* ================= UNIVERSE VIEW (v0.2 — The Observatory) =================
+   SVG-based spatial view. Deterministic layout: the sky is stable between
+   visits (a real star chart doesn't rearrange itself). Every star is a
+   focusable element — accessibility is structural, not retrofitted. */
+const SKY_W = 1000, SKY_H = 660;
+const ANCHORS = {
+  disability:[330,110], identity:[130,200], idleness:[470,270], agency:[770,150],
+  selah:[890,330], money:[180,430], building:[700,460], systems:[470,540]
+};
+const SHORT = { idleness:"Idleness Institute", agency:"AI + Agency", disability:"Disability + Access",
+  selah:"Selah", identity:"Identity + Narrative", money:"Money + Precarity",
+  building:"Building in Public", systems:"Creativity + Systems" };
+let skyZoom = null, skyZoomName = "", travelAnim = null;
+
+function reducedMotion(){ return matchMedia("(prefers-reduced-motion: reduce)").matches; }
+function hashN(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function srand(seed){ let x=(seed>>>0)||1; return function(){ x^=x<<13; x^=x>>>17; x^=x<<5; x>>>=0; return x/4294967296; }; }
+
+function starPos(s){
+  const rnd = srand(hashN(s.id));
+  const cons = (s.constellations||[]).filter(function(c){ return ANCHORS[c]; });
+  if(cons.length){
+    const a = ANCHORS[cons[0]];
+    const ang = rnd()*Math.PI*2, dist = 44 + rnd()*62;
+    return { x: a[0]+Math.cos(ang)*dist*1.3, y: Math.max(34, Math.min(596, a[1]+Math.sin(ang)*dist*0.85)) };
+  }
+  return { x: 70+rnd()*860, y: 604+rnd()*26 };
+}
+function starVisual(s){
+  const a = s.assess||{};
+  const lev = (a.leverage==null)?5:a.leverage;
+  const mat = (a.maturity==null)?5:a.maturity;
+  let o = 0.34 + mat*0.066;
+  const disp = a.disposition;
+  if(s.doNotDevelop || disp==="Someday" || disp==="Never") o *= 0.42;
+  return { r: 4.5+lev*0.8, o: Math.min(1,o), focus: disp==="Focus now" };
+}
+function starAria(s){
+  const cons = (s.constellations||[]).map(function(c){ const k=constById(c); return k?k.name:c; }).join(", ");
+  return "Spark: "+s.title+". SPARK state: "+(STATE_META[s.state]?STATE_META[s.state].name:s.state)+"."+
+    (cons?" Constellations: "+cons+".":" Unplaced.")+
+    (s.doNotDevelop?" Parked — do not develop now.":"")+
+    ((s.assess&&s.assess.disposition)?" Disposition: "+s.assess.disposition+".":"");
+}
+function ringSVG(st, r, color){
+  if(st==="kickoff") return '<circle r="'+(r+6)+'" fill="none" stroke="'+color+'" stroke-width="1.4" opacity=".85"/><circle r="'+(r+10)+'" fill="none" stroke="'+color+'" stroke-width="1" opacity=".4"/>';
+  if(st==="refine") return '<circle r="'+(r+7)+'" fill="none" stroke="'+color+'" stroke-width="2.4" opacity=".9"/>';
+  if(st==="place") return '<circle r="'+(r+7)+'" fill="none" stroke="'+color+'" stroke-width="1.4" stroke-dasharray="7 4" opacity=".8"/>';
+  if(st==="snag") return '<circle r="'+(r+7)+'" fill="none" stroke="'+color+'" stroke-width="1.2" stroke-dasharray="2 5" opacity=".7"/>';
+  return '<circle r="'+(r+7)+'" fill="none" stroke="'+color+'" stroke-width="1.4" opacity=".85"/>';
+}
+function starSVG(s, x, y, traveling){
+  const v = starVisual(s);
+  const first = (s.constellations||[])[0];
+  const cc = (first && constById(first)) ? constById(first).color : "#9AA3C0";
+  const sc = STATE_META[s.state] ? STATE_META[s.state].color : "#9AA3C0";
+  const twDur = (4 + (hashN(s.id)%40)/10).toFixed(1);
+  return '<g class="star'+(traveling?" star-g":"")+'" data-sid="'+s.id+'" tabindex="0" role="button" aria-label="'+esc(starAria(s))+'"'+
+    ' style="transform:translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)"'+
+    ' onclick="openSpark(\''+s.id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openSpark(\''+s.id+'\')}">'+
+    '<circle class="tw" r="'+(v.r*2.4).toFixed(1)+'" fill="'+cc+'" style="--o1:.16;--o2:.05;animation-duration:'+twDur+'s"/>'+
+    '<circle class="core" r="'+v.r.toFixed(1)+'" fill="#F4F7FF" opacity="'+v.o.toFixed(2)+'"/>'+
+    ringSVG(s.state, v.r, sc)+
+    (v.focus ? '<circle class="fglow" r="'+(v.r+15).toFixed(1)+'" fill="none" stroke="#FFD60A" stroke-width="1.6"/>'+
+      '<text y="'+(-v.r-22).toFixed(0)+'" text-anchor="middle" style="font-size:11px;letter-spacing:.18em;fill:#FFD60A">◉ CURRENT FOCUS</text>' : '')+
+  '</g>';
+}
+function constellationFigure(cid){
+  const stars = liveSparks().filter(function(s){ return (s.constellations||[])[0]===cid; });
+  if(stars.length<2) return "";
+  const a = ANCHORS[cid], c = constById(cid);
+  const pts = stars.map(function(s){ const p=starPos(s); return {p:p, ang:Math.atan2(p.y-a[1], p.x-a[0])}; })
+    .sort(function(m,n){ return m.ang-n.ang; }).map(function(m){ return m.p; });
+  let d = "";
+  for(let i=0;i<pts.length-1;i++){
+    const p=pts[i], q=pts[i+1];
+    d += '<line x1="'+p.x.toFixed(1)+'" y1="'+p.y.toFixed(1)+'" x2="'+q.x.toFixed(1)+'" y2="'+q.y.toFixed(1)+'"/>';
+  }
+  return '<g stroke="'+c.color+'" stroke-width="1" opacity=".14">'+d+'</g>';
+}
+function linkLines(){
+  let d = "";
+  (DB.links||[]).forEach(function(l){
+    const a=sparkById(l.a), b=sparkById(l.b);
+    if(!a||!b) return;
+    const pa=starPos(a), pb=starPos(b);
+    d += '<line x1="'+pa.x.toFixed(1)+'" y1="'+pa.y.toFixed(1)+'" x2="'+pb.x.toFixed(1)+'" y2="'+pb.y.toFixed(1)+'" stroke="#8FA2FF" stroke-width="1.1" opacity=".3"/>';
+  });
+  return d ? '<g>'+d+'</g>' : "";
+}
+function renderUniverse(){
+  const svg = document.getElementById("sky");
+  if(!svg) return;
+  let inner = linkLines();
+  DB.constellations.forEach(function(c){ if(ANCHORS[c.id]) inner += constellationFigure(c.id); });
+  DB.constellations.forEach(function(c){
+    const a = ANCHORS[c.id]; if(!a) return;
+    const n = liveSparks().filter(function(s){ return (s.constellations||[]).includes(c.id); }).length;
+    inner += '<g class="const" tabindex="0" role="button" aria-label="Constellation '+esc(c.name)+', '+n+' sparks. Activate to zoom in."'+
+      ' onclick="skyZoomIn(\''+c.id+'\')" onkeydown="if(event.key===\'Enter\'){skyZoomIn(\''+c.id+'\')}">'+
+      '<circle cx="'+a[0]+'" cy="'+a[1]+'" r="3.2" fill="'+c.color+'" opacity=".55"/>'+
+      '<text class="sky-label" x="'+a[0]+'" y="'+(a[1]-18)+'" text-anchor="middle">'+esc(SHORT[c.id]||c.name)+'</text></g>';
+  });
+  liveSparks().forEach(function(s){
+    const p = starPos(s);
+    let x=p.x, y=p.y, traveling=false;
+    if(travelAnim && travelAnim.id===s.id){ x=travelAnim.from.x; y=travelAnim.from.y; traveling=true; }
+    inner += starSVG(s, x, y, traveling);
+  });
+  (DB.library||[]).forEach(function(l, i){
+    const x = 120 + i*54;
+    inner += '<g class="star" tabindex="0" role="button" aria-label="Finished work: '+esc(l.title)+'. Activate to open the Library."'+
+      ' style="transform:translate('+x+'px,640px)" onclick="go(\'library\')" onkeydown="if(event.key===\'Enter\'){go(\'library\')}">'+
+      '<circle r="3.4" fill="#F4F7FF" opacity=".85"/><circle r="7.5" fill="none" stroke="#FFD60A" stroke-width="1" opacity=".55"/>'+
+      '<title>'+esc(l.title)+'</title></g>';
+  });
+  inner += '<text class="band-label" x="60" y="657">the outskirts — unmapped sparks · deep time (finished work, still visible)</text>';
+  svg.innerHTML = inner;
+  const zb = skyZoom || {x:0,y:0,w:SKY_W,h:SKY_H};
+  svg.setAttribute("viewBox", zb.x+" "+zb.y+" "+zb.w+" "+zb.h);
+  const cap = document.getElementById("skyCaption");
+  if(cap) cap.innerHTML = skyZoomName
+    ? '<b>'+esc(skyZoomName)+'</b> — zoomed · <a href="#" onclick="skyReset();return false;" style="color:var(--cyan)">whole sky</a>'
+    : 'whole sky — click a constellation name to zoom';
+  if(travelAnim){
+    const t = travelAnim; travelAnim = null;
+    if(!reducedMotion()){
+      const el = svg.querySelector('[data-sid="'+t.id+'"]');
+      if(el){ requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        el.style.transform = 'translate('+t.to.x.toFixed(1)+'px,'+t.to.y.toFixed(1)+'px)';
+      }); }); }
+    }
+  }
+}
+function skyZoomIn(cid){
+  const a = ANCHORS[cid]; if(!a) return;
+  const c = constById(cid);
+  const w=440, h=290;
+  const box = { x: Math.max(0, Math.min(SKY_W-w, a[0]-w/2)),
+                y: Math.max(0, Math.min(SKY_H-h, a[1]-h/2)), w:w, h:h };
+  skyZoomName = c ? c.name : "";
+  animateSkyBox(box);
+}
+function skyReset(){ skyZoomName = ""; animateSkyBox(null); }
+function applySkyBox(b){ document.getElementById("sky").setAttribute("viewBox", b.x+" "+b.y+" "+b.w+" "+b.h); }
+function animateSkyBox(box){
+  const cur = skyZoom || {x:0,y:0,w:SKY_W,h:SKY_H};
+  const target = box || {x:0,y:0,w:SKY_W,h:SKY_H};
+  if(reducedMotion()){ skyZoom = box; renderUniverse(); return; }
+  const t0 = performance.now(), dur = 480;
+  function step(t){
+    const k = Math.min(1,(t-t0)/dur), e = k<.5 ? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+    const mx = function(a,b){ return a+(b-a)*e; };
+    applySkyBox({x:mx(cur.x,target.x), y:mx(cur.y,target.y), w:mx(cur.w,target.w), h:mx(cur.h,target.h)});
+    if(k<1) requestAnimationFrame(step); else { skyZoom = box; renderUniverse(); }
+  }
+  requestAnimationFrame(step);
+}
+function toggleLink(oid, on){
+  const s = sparkById(curSpark); if(!s) return;
+  DB.links = DB.links||[];
+  DB.links = DB.links.filter(function(l){ return !((l.a===s.id&&l.b===oid)||(l.a===oid&&l.b===s.id)); });
+  if(on) DB.links.push({a:s.id, b:oid, confirmed:true, createdAt:new Date().toISOString().slice(0,10)});
+  save(); refresh();
+}
+
+/* ================= boot ================= */
+load();
+(function(){
+  document.querySelectorAll(".topbar nav button").forEach(function(x){ x.classList.remove("active"); });
+  document.querySelector('.topbar nav button[data-view="universe"]').classList.add("active");
+  document.querySelectorAll(".view").forEach(function(v){ v.classList.add("hidden"); });
+  document.getElementById("view-universe").classList.remove("hidden");
+})();
+document.getElementById("skyReset").addEventListener("click", skyReset);
+renderUniverse();
+</script>
+</body>
+</html>
